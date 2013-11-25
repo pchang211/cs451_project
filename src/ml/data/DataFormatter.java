@@ -19,28 +19,24 @@ public class DataFormatter {
 		
 		File test = new File("/Users/philipchang/Documents/csci/cs451/project/bin/test.txt");
 		parseText(test);
-		
-//		else {
-//			String path = args[0];
-//			String path = "/Users/philipchang/Documents/csci/cs451/project/bin/test.txt";
-			String path = "/Users/philipchang/Documents/csci/cs451/project/20news-bydate/20news-bydate-test";
+		String path = "/Users/philipchang/Documents/csci/cs451/project/20news-bydate/20news-bydate-test";
 			
-			DataFormatter formatter = new DataFormatter();
-			formatter.format(path);
+		DataFormatter formatter = new DataFormatter();
+		formatter.init(path);
 			
-			formatter.writeOutput("output.txt");
-			
+		formatter.writeOutput("output.txt");	
 	}
 	
-	public void format(String path) {
+	/**
+	 * Takes in a directory and initializes an ArrayList with the pathnames of all the files
+	 * @param path
+	 */
+	public void init(String path) {
 		File dir = new File(path);
 		
 		System.out.println("is Directory? " + dir.isDirectory());
 		System.out.println("is File? " + dir.isFile());
 		System.out.println("name: " + dir.getName());
-		
-		File[] example_files;
-		File[] files;
 		
 		if (dir.exists()) {
 			if (dir.isDirectory()) {
@@ -70,6 +66,12 @@ public class DataFormatter {
 		}
 	}
 	
+	/**
+	 * Writes output to specified location
+	 * Text is separated by line, and is parsed based on whether it is useful content
+	 * @param output_file
+	 * @throws IOException
+	 */
 	public void writeOutput(String output_file) throws IOException{
 		FileWriter output = new FileWriter(output_file);
 		for ( File f : filesToAggregate ) {
@@ -80,6 +82,14 @@ public class DataFormatter {
 		output.close();
 	}
 
+	/**
+	 * Takes in a file and parses the file's text into only the useful information
+	 * Specifically, looks for the line that says how many lines (n) there are in the post
+	 * and takes the last n lines of the file
+	 * @param file
+	 * @return
+	 * @throws IOException
+	 */
 	public static String parseText(File file) throws IOException {
 		StringBuilder builder = new StringBuilder();
 		BufferedReader reader = new BufferedReader(new FileReader(file));
@@ -126,7 +136,6 @@ public class DataFormatter {
 		
 		String text = builder.toString();
 		System.out.println(file.getName());
-//		System.out.println(text);
 		return text;
 	}
 	
