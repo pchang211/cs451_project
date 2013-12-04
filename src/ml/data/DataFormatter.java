@@ -10,16 +10,28 @@ import java.util.ArrayList;
 
 public class DataFormatter {
 	
+	private final int ALT = 0;
+	private final int COMP = 1;
+	private final int MISC = 2;
+	private final int FOR_SALE = 3;
+	private final int AUTOS = 4; //cars and motorcycles
+	private final int SPORTS = 5; //hockey and baseball
+	private final int SCIENCE = 6; //cryptology, medicine, electronics, space
+	private final int SOC_RELIGION = 7;
+	private final int POLITICS = 8;
+	private final int TALK_RELIGION = 9;
+	
+	
 	private ArrayList<File> filesToAggregate = new ArrayList<File>();
 	
 	public static void main (String args[]) throws IOException {
-		if ( args.length!= 1 ) {
-			System.err.println("FormatData <inputDir> ");
-		}
+//		if ( args.length!= 1 ) {
+//			System.err.println("FormatData <inputDir> ");
+//		}
 		
-		File test = new File("/Users/philipchang/Documents/csci/cs451/project/bin/test.txt");
-		parseText(test);
-		String path = "/Users/philipchang/Documents/csci/cs451/project/20news-bydate/20news-bydate-test";
+//		File test = new File("/Users/philipchang/Documents/csci/cs451/project/bin/test.txt");
+//		parseText(test);
+		String path = "/Users/philipchang/Documents/csci/cs451/cs451_project/20news-bydate/20news-bydate-test";
 			
 		DataFormatter formatter = new DataFormatter();
 		formatter.init(path);
@@ -75,6 +87,29 @@ public class DataFormatter {
 	public void writeOutput(String output_file) throws IOException{
 		FileWriter output = new FileWriter(output_file);
 		for ( File f : filesToAggregate ) {
+			//assign correct label based on file pathname
+			if (f.getAbsolutePath().contains(".atheism"))
+				output.append(Integer.toString(ALT));
+			else if (f.getAbsolutePath().contains("comp.")) 
+				output.append(Integer.toString(COMP));
+			else if (f.getAbsolutePath().contains(".forsale"))
+				output.append(Integer.toString(FOR_SALE));
+			else if (f.getAbsolutePath().contains(".autos") || f.getAbsolutePath().contains(".motorcycles"))
+				output.append(Integer.toString(AUTOS));
+			else if (f.getAbsolutePath().contains("sport."))
+				output.append(Integer.toString(SPORTS));
+			else if (f.getAbsolutePath().contains("sci."))
+				output.append(Integer.toString(SCIENCE));
+			else if (f.getAbsolutePath().contains("soc.religion"))
+				output.append(Integer.toString(SOC_RELIGION));
+			else if (f.getAbsolutePath().contains("politics."))
+				output.append(Integer.toString(POLITICS));
+			else
+				output.append(Integer.toString(TALK_RELIGION));
+			
+			
+			output.append("\t");
+			
 			output.append(parseText(f));
 			output.append('\n');
 		}
@@ -101,18 +136,24 @@ public class DataFormatter {
 		while (nextLine != null) {
 			lines.add(nextLine);
 			if (nextLine.contains("Lines:")) {
-				System.out.println("lines found");
 				String[] parts = nextLine.split(": ");
-				
+
 				try {
 					textLines = Integer.parseInt(parts[1]);
-					System.out.println("numlines = " + textLines);
 				}
 				catch (NumberFormatException n) {
 					System.err.println("Not a number following lines: ");
 					textLines = 0;
 				}
 			}
+			
+			if (nextLine.contains("Subject:")) { // we want the subject headers
+				String[] parts = nextLine.split(": ");
+				int last = parts.length - 1;
+				String subject_line = parseWords(parts[last]);
+				builder.append(subject_line);
+			}
+			
 			nextLine = reader.readLine();
 		}
 		reader.close();
@@ -125,8 +166,8 @@ public class DataFormatter {
 			try {
 				String toAdd = lines.get(lines.size()-i);
 				if (!toAdd.matches("[\\s]*")) { //check if it is just an empty line
-					builder.append(toAdd);
-					builder.append(" ");
+					String words = parseWords(toAdd);
+					builder.append(words);
 				}
 			}
 			catch (ArrayIndexOutOfBoundsException a) {
@@ -137,6 +178,22 @@ public class DataFormatter {
 		String text = builder.toString();
 		System.out.println(file.getName());
 		return text;
+	}
+	
+	private static String parseWords(String line) {
+		StringBuilder builder = new StringBuilder();
+		String words[] = line.split(" ");
+		for ( String w : words ) {
+			if ( !w.matches("[\\W]*") ) { //do not add if word is just non-word symbols
+				String word_parts[] = w.split("\\W");
+				for (String p : word_parts) { //get rid of non-word characters
+					builder.append(p);
+					builder.append(" ");
+				}
+			}
+		}
+		
+		return builder.toString();
 	}
 	
 }
