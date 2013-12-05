@@ -15,8 +15,12 @@ public class KMeansClassifier implements Classifier {
 	private int k; // number of clusters
 	private int i,j,p,q; //iteration variables
 	private int numIterations;
+	private ArrayList<Example> centroids;
+	private HashMap<Integer, ArrayList<Example>> clusters;
 	
 	private Set<Integer> data_featureset; //consider using ArrayList for this
+	
+	
 	private HashMap<Example, tfidf_vector> tfidf_vectors; //Hashmap of examples to their tf_idf vectors
 	private HashMap<Integer, Double> idf_hash;
 	
@@ -28,88 +32,113 @@ public class KMeansClassifier implements Classifier {
 		
 //		-------------------------------------------------------------------------------------------------------------------
 		data_featureset = data.getAllFeatureIndices();
+		centroids = new ArrayList<Example>();
+		clusters = new HashMap<Integer, ArrayList<Example>>();
 		
-//		populate idf hash map
-		idf_hash = new HashMap<Integer, Double>();
-		for ( int f : data_featureset ) {
-			populateIDF(f, examples);
-		}
-		
-//		get all the tf_idf vectors
-		for ( Example e : examples ) {
-			tfidf_vector vector = new tfidf_vector(e, data_featureset, idf_hash);
-			tfidf_vectors.put(e, vector);
-		}
-		
+
 		
 //		-------------------------------------------------------------------------------------------------------------------
 		
+		for (int i = 0; i < k; i++) {
+			clusters.put(i, new ArrayList<Example>());
+		}
+		System.out.println("clusters: "+clusters);
 		
-		weightExamples(examples);  //tf_idf
+//		weightExamples(examples);  //tf_idf
+		
+		initializeMeans(examples);
+		System.out.println("centroids: "+centroids);
+		
+		// Associate each example with the nearest centroid (cluster them)
+		for ( Example e : examples ) {
+			int centroid_index = getClosestCentroid(e);
+			System.out.println(centroid_index);
+//			ArrayList<Example> updated_associated_examples = (ArrayList<Example>) clusters.get(centroid_index);
+//			updated_associated_examples.add(e);
+//			clusters.put(centroid_index, clusters.get(centroid_index).add(e));
+			clusters.get(centroid_index).add(e);
+		}
+		
+		System.out.println(centroids);
+		
+		for (int cluster_index: clusters.keySet() ) {
+			System.out.println(cluster_index);
+//			System.out.println("centroid: "+centroids.get(cluster_index));
+			ArrayList<Example> cluster = clusters.get(cluster_index);
+			for (Example example : cluster) {
+				System.out.println(example);
+			}
+			System.out.println("---------");
+			
+		}
 		
 		
-		ArrayList<HashMap<Integer,Double>> centroids = exampleToCentroid(initializeMeans(examples),examples.size()); //initialize centroids
+//		ArrayList<HashMap<Integer,Double>> centroids = exampleToCentroid(initializeMeans(examples),examples.size()); //initialize centroids
 
 		HashMap<Example,Integer> clusterAssignments = new HashMap<Example,Integer>();
 			
-		for(int iter=0; iter<numIterations;iter++){
+//		for(int iter=0; iter<numIterations;iter++){
+//		
+//			for(Example e: examples){
+//				ArrayList<Double> distances = new ArrayList<Double>();
+//				
+//				for(HashMap<Integer,Double> hash: centroids){
+//					double distance = 0.0;
+//					
+//					for (Map.Entry<Integer,Double> centroid : hash.entrySet()){
+//						
+//						double exampleFeature = e.getFeature(centroid.getKey());
+//						distance += Math.pow(exampleFeature-centroid.getValue(),2);
+//					}
+//					
+//					distances.add(Math.sqrt(distance));
+//				}
+//				
+//				double minDistance = Double.MAX_VALUE;
+//				int closestCentroid = -1; //initialize for error checking
+//				
+//				for(i=0;i<centroids.size();i++){
+//					if(distances.get(i) < minDistance){
+//						minDistance = distances.get(i);
+//						closestCentroid = i;
+//					}
+//				}
+//				
+//				clusterAssignments.put(e, closestCentroid);
+//			}
+//			
+//			for (Map.Entry<Example,Integer> mapping : clusterAssignments.entrySet()){
+//				System.out.println(mapping.getKey() + " = " + mapping.getValue());
+//			}
+//				
+//			this.finalClusterAssignments = clusterAssignments;
+//			//centroids.clear(); //update centroids : 2nd for loop 
+//		
+//			for(i=0;i<k;i++){
+//				
+//				HashMap<Integer,Double> currCentroid = new HashMap<Integer,Double>();
+//				HashMap<Integer,Double> denominator = new HashMap<Integer,Double>();
+//			
+//				for (Integer p=0;p<data.getAllFeatureIndices().size();p++){ currCentroid.put(p,0.0); denominator.put(p,0.0); }
+//				
+//				for (Map.Entry<Example,Integer> example : clusterAssignments.entrySet()){
+//					if(example.getValue() == i){
+//						for(Integer feature: example.getKey().getFeatureSet()){
+//							System.out.println(currCentroid.get(feature) + " | " + example.getKey().getFeature(feature));
+//							currCentroid.put(feature, currCentroid.get(feature) + example.getKey().getFeature(feature)); // 
+//							//denominator.put(feature, denominator.get(feature) + 1);
+//						}
+//					}
+//				}
+//				
+//				for(j=0;j<currCentroid.size();j++){ currCentroid.put(j, currCentroid.get(j)/denominator.get(j)); }
+////				centroids.set(i, currCentroid);
+//			}
+//		}
 		
-			for(Example e: examples){
-				ArrayList<Double> distances = new ArrayList<Double>();
-				
-				for(HashMap<Integer,Double> hash: centroids){
-					double distance = 0.0;
-					
-					for (Map.Entry<Integer,Double> centroid : hash.entrySet()){
-						
-						double exampleFeature = e.getFeature(centroid.getKey());
-						distance += Math.pow(exampleFeature-centroid.getValue(),2);
-					}
-					
-					distances.add(Math.sqrt(distance));
-				}
-				
-				double minDistance = Double.MAX_VALUE;
-				int closestCentroid = -1; //initialize for error checking
-				
-				for(i=0;i<centroids.size();i++){
-					if(distances.get(i) < minDistance){
-						minDistance = distances.get(i);
-						closestCentroid = i;
-					}
-				}
-				
-				clusterAssignments.put(e, closestCentroid);
-			}
-			
-			for (Map.Entry<Example,Integer> mapping : clusterAssignments.entrySet()){
-				System.out.println(mapping.getKey() + " = " + mapping.getValue());
-			}
-				
-			this.finalClusterAssignments = clusterAssignments;
-			//centroids.clear(); //update centroids : 2nd for loop 
 		
-			for(i=0;i<k;i++){
-				
-				HashMap<Integer,Double> currCentroid = new HashMap<Integer,Double>();
-				HashMap<Integer,Double> denominator = new HashMap<Integer,Double>();
-			
-				for (Integer p=0;p<data.getAllFeatureIndices().size();p++){ currCentroid.put(p,0.0); denominator.put(p,0.0); }
-				
-				for (Map.Entry<Example,Integer> example : clusterAssignments.entrySet()){
-					if(example.getValue() == i){
-						for(Integer feature: example.getKey().getFeatureSet()){
-							System.out.println(currCentroid.get(feature) + " | " + example.getKey().getFeature(feature));
-							currCentroid.put(feature, currCentroid.get(feature) + example.getKey().getFeature(feature)); // 
-							//denominator.put(feature, denominator.get(feature) + 1);
-						}
-					}
-				}
-				
-				for(j=0;j<currCentroid.size();j++){ currCentroid.put(j, currCentroid.get(j)/denominator.get(j)); }
-				centroids.set(i, currCentroid);
-			}
-		}
+		
+		
 	} 
 	
 
@@ -129,63 +158,77 @@ public class KMeansClassifier implements Classifier {
 			for(Integer feature: exampleFeatures){						 
 				double tf_idf = tf_idf(feature, max, e, examples);
 				//don't need to deep copy since we don't use the specific feature value after modifying it
-				 e.setFeature(feature, tf_idf*e.getFeature(feature));
+				 e.setFeature(feature, tf_idf);
 			}
 		}
 	}
+
 	
 	/***
 	 * Find the means most likely to yield a global maximum
 	 * @param examples
 	 * @return array of means
 	 */
-	public ArrayList<Example> initializeMeans(ArrayList<Example> examples){
-		ArrayList<Example> u = new ArrayList<Example>();
-		
-		//pick first mean randomly, then add it to u
-//		Random randomGenerator = new Random();
-//		int randomIndex = randomGenerator.nextInt(examples.size());
-//		u.add(examples.get(randomIndex));
-		u.add(examples.get(0)); //debugging
-		
-		HashMap<Example,Double> minDistances = new HashMap<Example,Double>();
-		
-		//fork=2 to K do
-		for(i=1;i<k;i++){
-			for(Example e: examples){
-					minDistances.put(e, getMinDistance(e,u));
-			}
-			
-			//normalize to probability distribution. Each example is assigned a weighted probability of being picked as an initial mean.
-			double normalizer = 0.0;
-			for (Double value : minDistances.values()) { normalizer += value; }
-			for (Map.Entry<Example,Double> entry : minDistances.entrySet()){ entry.setValue(entry.getValue() / normalizer); }
-			
-			double randomProb = Math.random(); //random probability
-			//used to find the example whose (weighted) probability range contains the just-generated random probability
-			double findExample = 0.0;
-			
-			
-//			double maxDist = -Double.MAX_VALUE; Example newMean = new Example(); //find argmax min(k' < k) debugging
-			
-			//Locate the example chosen to be the initial mean
-			for (Map.Entry<Example,Double> entry : minDistances.entrySet()){
-//				if( maxDist < entry.getValue()){ maxDist = entry.getValue(); newMean = entry.getKey(); } //debugging
-				
-				findExample += entry.getValue();
-				if(randomProb < findExample) { u.add(entry.getKey()); break; }
-			}
-			minDistances.clear(); //u.add(newMean); //debugging 
+	public void initializeMeans(ArrayList<Example> examples){
+		centroids.add(examples.get(0)); //just pick the first example arbitrarily
+		for (Example c : centroids) {
+//			System.out.println(c);
+//			System.out.println("--------------------");
 		}
 		
-//		for(Example e: u){ System.out.println(e); } //debugging
-		
-		return u;
+		for (int i = 1; i < k; i++) {
+			double max_distance = Double.MAX_VALUE;
+			Example farthest_example = examples.get(0);
+			for ( Example e : examples ) {				
+				if ( getMaxCos(e, centroids) < max_distance ) {
+					max_distance = getMaxCos(e, centroids);
+					farthest_example = e;
+				}
+			}
+			centroids.add(farthest_example);
+			for (Example c : centroids) {
+//				System.out.println(c);
+			}
+//			System.out.println("--------------------");
+		}
 	}
 
+	/**
+	 * given an example and the existing centroids, finds the maximum cosine similarity of the example to a centroid
+	 * @param e
+	 * @param centroids
+	 * @return
+	 */
+	private double getMaxCos(Example e, ArrayList<Example> centroids) {
+		double max_cos = Double.MIN_VALUE;
+		for ( Example c : centroids ) {
+			if (cos_sim(e, c) > max_cos) {
+				max_cos = cos_sim(e, c);
+			}
+		}
+		
+		return max_cos;
+	}
+	
+	private int getClosestCentroid(Example e) {
+		double max_cos = -1;
+//		System.out.println(max_cos);
+		Example closest_centroid = new Example();
+		int index_of_closest_centroid = -5;
+		for ( int index = 0; index< centroids.size(); index++ ) {
+			Example c = centroids.get(index);
+//			System.out.println(cos_sim(e,c));
+			if (cos_sim(e, c) > max_cos)  {
+				max_cos = cos_sim(e, c);
+				closest_centroid = c;
+				index_of_closest_centroid = index;
+			}
+		}
+		return index_of_closest_centroid;
+	}
 	
 	/***
-	 * Find the distance from this example to the closest mean
+	 * Find the distance from this example to the closest centroid
 	 * @param 
 	 * @return the distance to the closest centroid
 	 */
@@ -346,21 +389,26 @@ public class KMeansClassifier implements Classifier {
 	 * @return
 	 */
 	public double cos_sim(Example exampleA, Example exampleB) {
-		HashMap<Integer, Double> vA = tfidf_vectors.get(exampleA).getVector();
-		HashMap<Integer, Double> vB = tfidf_vectors.get(exampleB).getVector();
 		
 		double dot_product = 0;
 		double mag_1 = 0;
 		double mag_2 = 0;
 		
+//		System.out.println("comparing " + exampleA + " to " + exampleB);
+		
 		for ( int f : data_featureset ) {
-			dot_product += ( vA.get(f) * vB.get(f) );
-			mag_1 += Math.pow(vA.get(f), 2);
-			mag_2 += Math.pow(vB.get(f), 2);
+			dot_product += ( exampleA.getFeature(f) * exampleB.getFeature(f) );
+			mag_1 += Math.pow(exampleA.getFeature(f), 2);
+			mag_2 += Math.pow(exampleB.getFeature(f), 2);
 		}
 		
 		mag_1 = Math.pow(mag_1, .5);
 		mag_2 = Math.pow(mag_2, .5);
+//		System.out.println("dot_product: " + dot_product);
+//		System.out.println("mag_1: " + mag_1);
+//		System.out.println("mag_2: " + mag_2);
+//		System.out.println("comparing " + exampleA + " to " + exampleB + ": " + dot_product/(mag_1*mag_2));
+		
 		
 		return dot_product/(mag_1*mag_2);
 	}
